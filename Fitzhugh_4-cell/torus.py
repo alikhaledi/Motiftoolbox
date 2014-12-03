@@ -69,7 +69,7 @@ class torus(win.window):
 		self.ax.set_xlim(0., 1.)
 		self.ax.set_ylim(0., 1.)
 		self.ax.set_zlim(0., 1.)
-		self.fig.tight_layout()
+		#self.fig.tight_layout()
 		self.ax.autoscale(False)
 		
 		self.key_func_dict.update(dict( u=torus.increase_grid,		i=torus.decrease_grid,
