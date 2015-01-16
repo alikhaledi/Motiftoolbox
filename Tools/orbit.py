@@ -2,8 +2,10 @@
 
 import numpy as np
 import tools as tl
+import scipy
 import scipy.optimize as opt
 import autoAdapter
+import os
 
 try:
 	import auto
@@ -19,6 +21,8 @@ class orbit(object):
 
 	def __init__(self, model):
 		self.set_model(model)
+		scipy.random.seed()
+		self.autoname = "orbit"+str(scipy.random.randint(10**9))
 
 
 	def evaluate_orbit(self, phase):
@@ -42,7 +46,7 @@ class orbit(object):
 		self.ORBIT_COMPUTED = False
 
 
-	def find_orbit(self):
+	def find_orbit(self, remove=True):
 
 		if self.ORBIT_COMPUTED:
 			return
@@ -53,22 +57,23 @@ class orbit(object):
 		try:
 			ni = tl.crossings(X[self.model.IDX_THRESHOLD], self.model.THRESHOLD) # convert to millivolts
 			X = X[:, ni[-2]:ni[-1]]
-	
+		
 			self.period = self.dt*(ni[-1]-ni[-2])
-
-			phase = tl.PI2*np.arange(X.shape[1])/float(X.shape[1]-1)
 	
+			phase = tl.PI2*np.arange(X.shape[1])/float(X.shape[1]-1)
+		
 			if AUTO_ENABLED: # if enabled, find the exact solution
 				t = self.period*np.arange(X.shape[1])/float(X.shape[1]-1)
 				self.write_solution(t, X, mode=0)
 				phase, X = self.auto_orbit()
-	
+				if remove: self.auto_clean()
+		
 			# splinefit the trajectory
 			for i in xrange(self.dimensions):
 				self.trajectory[i].makeModel(X[i], phase)
-		
-			self.ORBIT_COMPUTED = True
 			
+			self.ORBIT_COMPUTED = True
+		
 		except:
 			print '# single_orbit:  No closed orbit found!'
 			raise ValueError
@@ -76,7 +81,7 @@ class orbit(object):
 
 
 	def write_solution(self, t, X, mode=0): # mode=0: orbit, mode=1: adjoint
-		f = open('orbit.dat', 'w+')
+		f = open(self.autoname+'.dat', 'w+')
 		(dim, N) = X.shape
 
 		for i in xrange(N):
@@ -95,18 +100,26 @@ class orbit(object):
 		if mode:	mode = 'adjoint'
 		else:		mode = 'orbit'
 
-		autoAdapter.writeConstantsFile('c.orbit', NDIM=dim, NTST=512, mode=mode)
+		autoAdapter.writeConstantsFile('c.'+self.autoname, NDIM=dim, NTST=512, mode=mode)
 
 
 
 	def auto_orbit(self):
-		self.model.createAutoCode('orbit.c', period=self.period)
-		solution = auto.run('orbit')(2)	# the last label
+		self.model.createAutoCode(self.autoname+'.c', period=self.period)
+		solution = auto.run(self.autoname)(2)	# the last label
 		self.period = solution["p"](11)	# save new period
 		tX = np.array(solution.toArray())
 		phase = tl.PI2*tX[:, 0]
 		X = tX[:, 1:] # save new solution
 		return phase, np.transpose(X)
+
+
+	def auto_clean(self):
+		toBeRemoved = ['c.'+self.autoname, self.autoname+'.dat',
+				self.autoname+'.c', self.autoname+'.o', self.autoname+'.exe',
+				'fort.7', 'fort.8', 'fort.9']
+		for name in toBeRemoved:
+			os.remove(name)
 
 
 

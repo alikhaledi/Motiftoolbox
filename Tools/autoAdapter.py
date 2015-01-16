@@ -79,25 +79,25 @@ def writeConstantsFile(filename, NDIM, NTST, mode='orbit'):
 
 	if mode == 'orbit':
 		constants = """
-		dat='orbit'
+		dat='%s'
 		NDIM=%i, IPS=2, IRS=0, ILP=0
 		ICP=[10, 'PERIOD']
 		NTST=%i, NCOL=4, IAD=3, ISP=2, ISW=1, IPLT=4, NBC=0, NINT=0
 		NMX=2, NPR=2, MXBF=10, IID=3, ITMX=8, ITNW=15, NWTN=3, JAC=0
 		EPSL=1e-12, EPSU=1e-12, EPSS =0.0001
 		DS =0.1, DSMIN=0.00001, DSMAX=25.0, IADS=1
-		NPAR=5, THL={'PERIOD': 0.0}, THU={}""" % (NDIM, NTST)
+		NPAR=5, THL={'PERIOD': 0.0}, THU={}""" % (filename.split('.')[1], NDIM, NTST)
 	
 	elif mode == 'adjoint':
 		constants = """
-		dat='orbit'
+		dat='%s'
 		NDIM=%i, IPS=2, IRS=0, ILP=0
 		ICP=[10, 'PERIOD']
 		NTST=%i, NCOL=4, IAD=3, ISP=2, ISW=1, IPLT=4, NBC=0, NINT=%i
-		NMX=2, NPR=2, MXBF=10, IID=2, ITMX=8, ITNW=15, NWTN=3, JAC=0
+		NMX=2, NPR=2, MXBF=10, IID=3, ITMX=8, ITNW=15, NWTN=3, JAC=0
 		EPSL=1e-12, EPSU=1e-12, EPSS =0.0001
 		DS =0.1, DSMIN=0.00001, DSMAX=25.0, IADS=1
-		NPAR=5, THL={'PERIOD': 0.0}, THU={}""" % (2*NDIM, NTST, NDIM) # 2NDIM equations, NDIM integral conditions (for each linear adjoint variable)
+		NPAR=5, THL={'PERIOD': 0.0}, THU={}""" % (filename.split('.')[1], 2*NDIM, NTST, NDIM) # 2NDIM equations, NDIM integral conditions (for each linear adjoint variable)
 
 	f = open(filename, 'w+')
 
