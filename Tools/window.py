@@ -1,7 +1,7 @@
 #! /usr/bin/python
 
 import matplotlib
-#matplotlib.use('TkAgg')
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
 try:
@@ -33,6 +33,11 @@ class window(object):
 		self.fig.canvas.mpl_connect('axes_enter_event', self.focusIn)
 		self.info = infoWindow
 
+                try:
+                        self.fig.tight_layout()
+
+                except:
+                        pass
 
 		if not position == None:
 
