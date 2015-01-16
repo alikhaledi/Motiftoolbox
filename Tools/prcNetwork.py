@@ -209,9 +209,9 @@ class prcNetwork(prc.phaseResettingCurve):
 		self.coupling_idx = model.IDX_COUPLING	# variable idx to which coupling is added
 
 
-	def getCouplingFunctions(self, dphi):
+	def getCouplingFunctions(self, dphi, remove=True):
 
-		if not self.PRC_COMPUTED: self.compute_prc()
+		if not self.PRC_COMPUTED: self.compute_prc(remove=remove)
 		phase =  np.arange(0., 2.*np.pi+dphi, dphi)	# [ 0, 2pi ]
 		traj_n = self.trajectory[self.coupling_idx](phase)
 		Q = self.prcurve[self.coupling_idx](phase)			# Q[i] = Q(phi_i)
@@ -260,8 +260,8 @@ if __name__ == '__main__':
 	from mpl_toolkits.mplot3d import Axes3D
 	import scipy.interpolate as interp
 
-	model.setParams(I=0.42, epsilon=0.3);
 	net = prcNetwork(model)
+	net.setParams(I=0.4, epsilon=0.1);
 
 	#figure()
 	#phase, coupling = net.twoCellCoupling(0.05, strength=[1., ratio])
@@ -269,7 +269,7 @@ if __name__ == '__main__':
 	#tight_layout()
 	
 	phase, coupling = net.threeCellCoupling(0.01)
-	coupling_function = interp_torus_vec(phase, phase, coupling) # dphi12, dphi13, coupling=[q12, q13]
+	coupling_function = interp_torus_vec(phase, phase, 10.*coupling) # dphi12, dphi13, coupling=[q12, q13]
 	coupling_function.findRoots(GRID=15)
 	coupling_function.plot()
 
