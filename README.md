@@ -72,6 +72,25 @@ To start the server:
 Enter Fitzhugh_3-cell directory
 $ ./webrun.py
 
+-------------------------------------------
+Noise
+-------------------------------------------
+The program uses gsl libraries for ansi-c noise computation.  First you need to install the gsl package, and then you need to make sure that your gcc will link the libgsl, and libgslcblas.  Then, you can enable noise with the command.
+
+make noise
+
+Libraries using noise will be automatically included, and can be used.  Note, that Fitzhugh-n_cell uses the scipy noise generators.
+
+-------------------------------------------
+AUTO
+-------------------------------------------
+Tools/orbit.py uses the python module of AUTO-07p to compute periodic orbits exactly.  If not installed, the orbit is approximated through a long-enough forward integration.
+
+Download AUTO-07p from http://sourceforge.net/projects/auto-07p/?source=typ_redirect and follow the directions.  Make sure to but in your .bashrc
+
+> export PYTHONPATH=$PYTHONPATH:$HOME/auto/07p/python:
+> source $HOME/auto/07p/cmds/auto.env.sh
+
 
 -------------------------------------------
 CONTRIBUTORS

@@ -2,7 +2,7 @@
 
 import ctypes as ct
 import numpy as np
-from scipy.interpolate import splrep, splev
+from scipy.interpolate import splrep, splev, interp1d
 import os
 import time
 import sys
@@ -24,7 +24,7 @@ PI2 = 2.*pi
 lib.crossings.argtypes = [ct.POINTER(ct.c_double), ct.c_uint, ct.POINTER(ct.c_double), ct.c_double]
 def crossings(x, threshold):
 	x = np.array(x)
-	ti = x.size*np.ones((x.size/2), float)	 # this is definitively the maximum number of possible crossings
+	ti = x.size*np.ones((1+x.size/2), float)	 # this is definitively the maximum number of possible crossings
 
 	lib.crossings(x.ctypes.data_as(ct.POINTER(ct.c_double)), ct.c_uint(x.size),
 		ti.ctypes.data_as(ct.POINTER(ct.c_double)),
@@ -36,6 +36,35 @@ def crossings(x, threshold):
 def find_crossings(x, trigger):
 	ti = [crossings(x[j], trigger) for j in xrange(x.shape[0])]
 	return ti
+
+
+def unwrapped_phase(recurrences, times):
+        f = interp1d(recurrences, PI2*np.arange(recurrences.size))
+        return f(times)
+
+
+def unwrapped_phase_differences(recurrences, reference_index=None):
+
+        start = np.max([t_j[0] for t_j in recurrences]) # last of the first recurrence events,
+        end = np.min([t_j[-1] for t_j in recurrences])  # first of the last recurrence events:        in between, all phases can be interpolated
+
+	if reference_index == None:
+        	times = np.sort(np.concatenate(recurrences))
+        	times = times[times.searchsorted(start):times.searchsorted(end)]    # these are all times in between
+	
+	else:
+		t_j = np.asarray(recurrences[reference_index])
+		times = t_j[t_j.searchsorted(start):t_j.searchsorted(end)]
+
+        phases = np.array([unwrapped_phase(t_j, times) for t_j in recurrences])
+
+        phase_differences = np.array([phases[i]-phases[0] for i in xrange(1, len(recurrences), 1)])
+        for i in xrange(phase_differences.shape[0]):
+                phase_differences[i] -= phase_differences[i, 0]  # differences should start diffusing at zero
+
+        return times, phase_differences
+
+
 
 
 def compute_phase_difference(ti):
@@ -141,13 +170,13 @@ class splineLS1D():
 			return splev(x*XMIN*XMAX+XMAX*(1.-XMIN)*self.xmin+XMIN*(1.-XMAX)*self.xmax, self.tck)
 
 		else:
-			return scipy.zeros((x.size), float)
+			return np.zeros((x.size), float)
 
 	def df(self, x):
 		if self.isphase:
 			return spalde(np.mod(x, 2.*np.pi), self.tck)[:, 1]
 
-		return scipy.array(spalde(x, self.tck))[:, 1]
+		return np.array(spalde(x, self.tck))[:, 1]
 
 	def saveCoefs(self, filename=None, file=None, close=True):
 		p = self.get('params')

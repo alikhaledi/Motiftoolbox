@@ -13,6 +13,13 @@ LDFLAGS=-lm
 #
 ###
 
+
+noise: cuda fitzhugh_noise
+	rm *.o
+
+test: allall fitzhugh_cuda
+	rm *.o
+
 cuda: allall fitzhugh_cuda leech_cuda
 	rm *.o
 
@@ -26,7 +33,7 @@ all: allall
 #
 ###
 
-allall: tools fitzhugh thetax2 leech plant
+allall: tools fitzhugh thetax2 leech plant prcNetwork
 
 
 tools: tools.o lib
@@ -38,11 +45,17 @@ thetax2: thetax2.o lib
 fitzhugh: fitzhugh.o lib
 	gcc -shared fitzhugh.o -o lib/_fitzhugh.so -lm
 
+fitzhugh_noise: fitzhugh_noise.o
+	gcc -shared fitzhugh_noise.o -o lib/_fitzhugh_noise.so -lm -lgsl -lgslcblas
+
 plant: plant.o lib
 	gcc -shared plant.o -o lib/_plant.so -lm
 
 leech: leech.o lib
 	gcc -shared leech.o -o lib/_leech.so -lm
+
+prcNetwork: prcNetwork.o lib
+	gcc -shared prcNetwork.o $(LDFLAGS) -o lib/_prcNetwork.so
 
 leech_cuda: leech.o leech_cuda.o lib
 	gcc -shared leech_cuda.o leech.o -o lib/_leech_cuda.so -L/usr/local/cuda/lib64 -lm -lcudart -lcuda
@@ -75,4 +88,4 @@ lib:
 
 
 clean:
-	rm -rf *.o *.pyc lib
+	rm -rf *.o *.pyc lib orbit.c orbit.exe c.orbit orbit.dat fort.7 fort.8 fort.9

@@ -3,48 +3,38 @@
 import sys
 sys.path.insert(0, '../Tools')
 import window as win
+import prcNetwork
 import fitzhugh as model
 import tools as tl
 import numpy as np
 import pylab as pl
 
 
-def setParams(**kwargs):
 
-	if len(kwargs) == 0:
-		kwargs = default_params
-
-	for k in kwargs.keys():
-
-		for c in ['0', 'b', 'g', 'r']:
-			model.params[k+'_'+c] = kwargs[k]
-
-	print '# update params', kwargs
-
-
-setParams(epsilon=0.3)
-
-class system(win.window):
+class system(win.window, prcNetwork.prcNetwork):
 
 	title = "System"
-	figsize = (4.7, 4)
+	figsize = (6, 12)
 	debug = False
 
-	def __init__(self, info=None, position=None, network=None, traces=None):
+	def __init__(self, info=None, position=None, network=None, traces=None, torus=None):
+		prcNetwork.prcNetwork.__init__(self, model)
 		win.window.__init__(self, position)
 
-		self.x_orbit, self.y_orbit, self.orbit_period = None, None, None
 		self.dt = 0.1
 		self.stride = 30
 		self.info = info
 		self.network = network
 		self.traces = traces
+		self.torus = torus
 
-		self.ax = self.fig.add_subplot(111, yticks=[-1.5, -0.5, 0.5, 1.5], xticks=[0, 0.5, 1.0])
+		### state space
+
+		self.ax = self.fig.add_subplot(311, yticks=[-1.5, -0.5, 0.5, 1.5], xticks=[0, 0.5, 1.0])
 		self.ax.set_xlim(-0.05, 1.05)
 		self.x_min, self.x_max = -1.5, 1.5
 		self.ax.set_ylim(self.x_min, self.x_max)
-		self.ax.set_ylabel(r'Membrane Voltage $V$ (a.u.)', fontsize=18)
+		self.ax.set_ylabel(r'Membrane Voltage $V$', fontsize=18)
 		self.ax.set_xlabel(r'Inactivation $x$', fontsize=18)
                 self.ax.set_title('Single-Cell Dynamics (+coupling)', fontsize=18)
 
@@ -54,17 +44,38 @@ class system(win.window):
 		self.li_sft_ncl_x, = self.ax.plot([], [], 'r-.', lw=2., label='with coupling')
 		self.tx_state_space = self.ax.text(0.2, -0.5, '', color='r')
 
-                #pl.legend(loc=0, prop=dict(size=18))
-		self.refresh_nullclines()
-		self.refresh_orbit()
+		### phase resetting curves
 
-		self.key_func_dict.update(dict(C=system.setParams))
+		self.ax_prc1 = self.fig.add_subplot(312, xticks=[0, 0.5, 1.0])
+		self.ax_prc1.set_xlim(0., 1.)
+		self.ax_prc1.set_ylim(-5., 5.)
+		self.ax_prc1.set_ylabel(r'PRC$_V$', fontsize=18)
+		self.ax_prc1.axhline(y=0, ls='--')
+
+		self.li_prc1_traj, = self.ax_prc1.plot([], [], 'k-', lw=1.)
+		self.li_prc1, = self.ax_prc1.plot([], [], 'r-', lw=2.)
+
+		self.ax_prc2 = self.fig.add_subplot(313, xticks=[0, 0.5, 1.0], sharex=self.ax_prc1)
+		self.ax_prc2.set_xlim(0., 1.)
+		self.ax_prc2.set_ylim(-5., 5.)
+		self.ax_prc2.set_ylabel(r'PRC$_x$', fontsize=18)
+		self.ax_prc2.set_xlabel(r'phase', fontsize=18)
+		self.ax_prc2.axhline(y=0, ls='--')
+
+		self.li_prc2_traj, = self.ax_prc2.plot([], [], 'k-', lw=1.)
+		self.li_prc2, = self.ax_prc2.plot([], [], 'r-', lw=2.)
+
+                #pl.legend(loc=0, prop=dict(size=18))
+
+		self.key_func_dict.update(dict(C=self.setParams))
 		
                 self.fig.canvas.mpl_connect('button_press_event', self.on_button)
 		self.fig.canvas.mpl_connect('button_release_event', self.off_button)
 		self.fig.canvas.mpl_connect('axes_enter_event', self.focus_in)
 
-
+		self.setParams(epsilon=0.3)
+		self.refresh_nullclines()
+		self.refresh_orbit()
 
 
 	def focus_in(self, event=None):
@@ -104,35 +115,49 @@ class system(win.window):
 
 	def setParams(self, **kwargs):
 
+		self.ORBIT_COMPUTED = False
+		self.PRC_COMPUTED = False
+
 		if len(kwargs) == 0:
 			kwargs = self.inputParams()
 
-		setParams(**kwargs)
+
+		for k in kwargs.keys():
+	
+			for c in ['0', 'b', 'g', 'r']:
+				model.params[k+'_'+c] = kwargs[k]
+
+		print '# update params', kwargs
+
 		self.refresh_nullclines()
 		self.refresh_orbit()
+
 	
 	
-	def load_initial_condition(self, x, y):				# only one phase:  everything's square!
+	def load_initial_condition(self, x, y): # only one phase:  everything's square!
 		X = np.zeros((model.N_EQ3), float)
 		phi_x, phi_y = tl.PI2*(1.-x), tl.PI2*(1.-y)
-		X[::model.N_EQ1] = self.x_orbit([0., phi_x, phi_y])
-		X[1::model.N_EQ1] = self.y_orbit([0., phi_x, phi_y])
+		XY = self.evaluate_orbit([0., phi_x, phi_y])
+		X[::model.N_EQ1] = XY[0]
+		X[1::model.N_EQ1] = XY[1]
 		return X
 
 
-	def load_initial_conditions(self, initial_phase):			# only one phase:  everything's square!
+	def load_initial_conditions(self, initial_phase): # only one phase:  everything's square!
 		initial_phase = np.asarray(initial_phase)
 
 		n = initial_phase.size
 		X = np.zeros((n**2, model.N_EQ3), float)
 		phi = tl.PI2*(1.-initial_phase)
-		X[:, 0], X[:, 1] = self.x_orbit(0.), self.y_orbit(0.)
+		XY = self.evaluate_orbit(0.)
+		X[:, 0], X[:, 1] = XY[0], XY[1]
 	
 		for i in xrange(n):
-			V_i, H_i = self.x_orbit(phi[i]), self.y_orbit(phi[i])
+			XY_i = self.evaluate_orbit(phi[i])
 	
 			for j in xrange(n):
-				X[i*n+j, model.N_EQ1:] = np.array([V_i, H_i, self.x_orbit(phi[j]), self.y_orbit(phi[j])])
+				XY_j = self.evaluate_orbit(phi[j])
+				X[i*n+j, model.N_EQ1:] = np.array([XY_i[0], XY_i[1], XY_j[0], XY_j[1]])
 	
 		return X
 
@@ -167,50 +192,66 @@ class system(win.window):
 	def refresh_orbit(self):
 	
 		try:
-			new_x, new_y, new_period = model.single_orbit(N_ORBIT=10**4)
-			self.x_orbit, self.y_orbit, self.orbit_period = new_x, new_y, new_period
+			self.compute_prc(kick=0.01, N_integrate=10**4) # also computes orbit
 			self.tx_state_space.set_text("")
 	
 		except:
 			self.tx_state_space.set_text("No closed orbit found!")
-			pass
 		
 		phi = np.arange(500)/float(499.)
 
+		X = self.evaluate_orbit(tl.PI2*phi)
 		xscale, yscale = 1., 3.
-		y, x = tl.adjustForPlotting(self.y_orbit(tl.PI2*phi), self.x_orbit(tl.PI2*phi), ratio=xscale/yscale, threshold=0.03*xscale)
+		y, x = tl.adjustForPlotting(X[1], X[0], ratio=xscale/yscale, threshold=0.03*xscale)
 		y[-1], x[-1] = y[0], x[0]
-
 		self.li_traj.set_data(y, x)
-		self.fig.canvas.draw()
 
-		try:
-			self.traces.computeTraces()
-		except:
-			pass
+		PRC = self.evaluate_prc(tl.PI2*phi)	
+		self.li_prc1.set_data(tl.adjustForPlotting(phi, PRC[0], ratio=xscale/yscale, threshold=0.03*xscale))
+		self.li_prc1_traj.set_data(tl.adjustForPlotting(phi, X[0], ratio=xscale/yscale, threshold=0.03*xscale))
+		self.li_prc2.set_data(tl.adjustForPlotting(phi, PRC[1], ratio=xscale/yscale, threshold=0.03*xscale))
+		self.li_prc2_traj.set_data(tl.adjustForPlotting(phi, X[1], ratio=xscale/yscale, threshold=0.03*xscale))
+		self.ax_prc1.set_ylim(min(PRC[0]), max(PRC[0]))
+		self.ax_prc2.set_ylim(min(PRC[1]), max(PRC[1]))
+		
+
+		self.fig.canvas.draw()
+		try:	self.torus.vectorField_prc()
+		except: pass
+
+		try:	self.traces.computeTraces()
+		except: pass
 
 
 	def on_button(self, event):
+
+		if not event.inaxes == self.ax:
+			return
+
 		self.event_start = np.array([event.xdata, event.ydata])
 
 
 	def N_output(self, CYCLES):
-		return int(CYCLES*self.orbit_period/self.dt)
+		return int(CYCLES*self.period/self.dt)
 
 
 	def off_button(self, event):
+
+		if not event.inaxes == self.ax:
+			return
+
 		delta_params = np.array([event.xdata, event.ydata])-self.event_start
 
 		if event.button == 1:
-			setParams(I=model.params['I_0']+delta_params[0], x=model.params['x_0']+delta_params[1])
+			self.setParams(I=model.params['I_0']+delta_params[0], x=model.params['x_0']+delta_params[1])
 
 		elif event.button == 3:
 			new_m = model.params['m_0']+delta_params[0]
-			setParams(m=model.params['m_0']*(new_m<0.)+(new_m>0.)*new_m, k=model.params['k_0']+delta_params[1]*3.)
+			self.setParams(m=model.params['m_0']*(new_m<0.)+(new_m>0.)*new_m, k=model.params['k_0']+delta_params[1]*3.)
 			
 		elif event.button == 2:
 			new_eps = model.params['epsilon_0']+delta_params[0]
-			setParams(epsilon=model.params['epsilon_0']*(new_eps<0.)+(new_eps>0.)*new_eps)
+			self.setParams(epsilon=model.params['epsilon_0']*(new_eps<0.)+(new_eps>0.)*new_eps)
 			
 		self.refresh_nullclines()
 		self.refresh_orbit()
