@@ -83,13 +83,13 @@ def initialize():
 	system.traces = traces
 
 
-	# customize system for web
+	## customize system for web
 	system.setParams(epsilon=0.3)
 	system.ax.set_xlabel(r'Inactivation Variable')
 	system.ax.set_ylabel(r'Voltage Variable')
 	system.ax.set_title('')
 	system.fig.tight_layout()
-	plugins.connect(system.fig, DragPlugin(eventHandlerURL="updatesystem",radioButtonID="systemRadio"))
+	plugins.connect(system.fig, DragPlugin(eventHandlerURL="updatesystem", radioButtonID="systemRadio"))
 
 	# customize network
 	network.ax.patch.set_facecolor('#777777')
@@ -98,16 +98,16 @@ def initialize():
 	network.ax.texts[6].set_text('1')
 	network.ax.texts[7].set_text('2')
 	network.ax.texts[8].set_text('3')
-	plugins.connect(network.fig, DragPlugin(eventHandlerURL="updatenetwork",radioButtonID="networkRadio"))
+	plugins.connect(network.fig, DragPlugin(eventHandlerURL="updatenetwork", radioButtonID="networkRadio"))
 
 	# customize traces
 	traces.ax.patch.set_facecolor('#777777')
 	traces.fig.tight_layout()
 
 	# customize torus
-	torus.ax_traces.set_xlabel(r'phase lag: 2-1')
-	torus.ax_basins.set_xlabel(r'phase lag: 2-1')
-	torus.ax_traces.set_ylabel(r'phase lag: 3-1')
+	torus.ax_traces.set_xlabel(r'phase lag: 1-2')
+	torus.ax_basins.set_xlabel(r'phase lag: 1-2')
+	torus.ax_traces.set_ylabel(r'phase lag: 1-3')
 	torus.fig.tight_layout()
 	torus.switch_processor()	# switches on the gpu if available
 	if torus.USE_GPU: torus.setGridsize(24)
