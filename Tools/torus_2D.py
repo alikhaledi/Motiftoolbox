@@ -158,7 +158,7 @@ class torus_2D(win.window):
 	
 
 
-	def sweep_phase_space(self, widget=None, event=None):
+	def sweep_phase_space(self, jitter=False, widget=None, event=None):
 		self.dt, self.stride, self.N_output = self.system.dt, self.system.stride, self.system.N_output(self.traces.CYCLES)
 
 		self.echo('computing using '+torus_2D.PROCESSOR[self.USE_GPU]+' ...')
@@ -168,7 +168,8 @@ class torus_2D(win.window):
 
 		initial_phases = np.arange(0., 1., 1./float(self.GRID))
 	
-		X = self.system.load_initial_conditions(initial_phases) # X[initial_condition, variable]
+		try:	X = self.system.load_initial_conditions(initial_phases, jitter=jitter) # X[initial_condition, variable]
+		except:	X = self.system.load_initial_conditions(initial_phases) # ... not all systems know about jittering.
 
 		t0 = time.time()
 		D = compute_phase_trace[self.USE_GPU](self, X)
@@ -203,7 +204,6 @@ class torus_2D(win.window):
 
 
 		# refine attractor
-		#"""
 		def refine_attractor(initial_condition):
 			t, V_j = self.traces.computeTraces(initial_condition, plotit=False)
 			V_j = np.transpose(V_j)
@@ -228,7 +228,8 @@ class torus_2D(win.window):
 			new_attractors = [att.attractor( [[0., 0.]], initial_state=[0., 0.] ).classify()]
 			new_attractors.extend( distribute.distribute(refine_attractor, 'initial_condition', initial_conditions) )
 			self.traces.CYCLES /= 4
-		#"""
+
+
 
 		attractors = [att.attractor( [[0., 0.]], initial_state=[0., 0.] ).classify()]
                 for (j, new_att_j) in enumerate(new_attractors):
