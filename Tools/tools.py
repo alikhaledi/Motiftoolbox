@@ -43,7 +43,7 @@ def unwrapped_phase(recurrences, times):
         return f(times)
 
 
-def unwrapped_phase_differences(recurrences, reference_index=None):
+def unwrapped_phase_differences(recurrences, reference_index=None, startAtZero=True):
 
         start = np.max([t_j[0] for t_j in recurrences]) # last of the first recurrence events,
         end = np.min([t_j[-1] for t_j in recurrences])  # first of the last recurrence events:        in between, all phases can be interpolated
@@ -53,14 +53,15 @@ def unwrapped_phase_differences(recurrences, reference_index=None):
         	times = times[times.searchsorted(start):times.searchsorted(end)]    # these are all times in between
 	
 	else:
-		t_j = np.asarray(recurrences[reference_index])
-		times = t_j[t_j.searchsorted(start):t_j.searchsorted(end)]
+		t_ref = np.asarray(recurrences[reference_index])
+		times = t_ref[t_ref.searchsorted(start):t_ref.searchsorted(end)]
 
         phases = np.array([unwrapped_phase(t_j, times) for t_j in recurrences])
 
-        phase_differences = np.array([phases[i]-phases[0] for i in xrange(1, len(recurrences), 1)])
-        for i in xrange(phase_differences.shape[0]):
-                phase_differences[i] -= phase_differences[i, 0]  # differences should start diffusing at zero
+        phase_differences = np.array([phases[0]-phases[i] for i in xrange(1, len(recurrences), 1)])	# Delta = phi_ref-phi_j
+	if startAtZero:
+		for i in xrange(phase_differences.shape[0]):
+			phase_differences[i] -= phase_differences[i, 0]  # differences should start diffusing at zero
 
         return times, phase_differences
 
@@ -237,17 +238,11 @@ def adjustForPlotting(x, y, ratio, threshold):	# ratio = xscale/yscale
 def plot_phase_2D(phase_1, phase_2, **kwargs):
 	from pylab import plot, subplot
 
-	try:
-		PI = kwargs.pop('PI')
-	
-	except:
-		PI = np.pi
+	if "PI" in kwargs:	PI = kwargs.pop('PI')
+	else:			PI = np.pi
 
-	try:
-		ax = kwargs.pop('axes')
-	
-	except:
-		ax = subplot(111)
+	if "axes" in kwargs:	ax = kwargs.pop('axes')
+	else: 			ax = subplot(111)
 
 	j0 = 0
 

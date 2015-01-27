@@ -477,7 +477,6 @@ def g_critical(I):
                 return m*(V-V**3)+I+g_of_V(V)*(E-V)-nullcline_y(V, V_0, k)
 
         V_opt = opt.fsolve(to_minimize, x0=-1.)
-        print V_opt
 
         return g_of_V(V_opt)
 
