@@ -18,6 +18,8 @@ pi = np.pi
 PI2 = 2.*pi
 
 
+notImplimentedString = "The function is not implimented."
+
 #===
 
 
