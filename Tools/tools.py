@@ -6,6 +6,7 @@ from scipy.interpolate import splrep, splev, interp1d
 import os
 import time
 import sys
+import matplotlib.patches as patches
 lib = ct.cdll.LoadLibrary(os.path.dirname(__file__)+'/lib/_tools.so')
 
 DOC_PATH = '../Fig/'
@@ -41,31 +42,31 @@ def find_crossings(x, trigger):
 
 
 def unwrapped_phase(recurrences, times):
-        f = interp1d(recurrences, PI2*np.arange(recurrences.size))
-        return f(times)
+		f = interp1d(recurrences, PI2*np.arange(recurrences.size))
+		return f(times)
 
 
 def unwrapped_phase_differences(recurrences, reference_index=None, startAtZero=True):
 
-        start = np.max([t_j[0] for t_j in recurrences]) # last of the first recurrence events,
-        end = np.min([t_j[-1] for t_j in recurrences])  # first of the last recurrence events:        in between, all phases can be interpolated
+	start = np.max([t_j[0] for t_j in recurrences]) # last of the first recurrence events,
+	end = np.min([t_j[-1] for t_j in recurrences])  # first of the last recurrence events:		in between, all phases can be interpolated
 
 	if reference_index == None:
-        	times = np.sort(np.concatenate(recurrences))
-        	times = times[times.searchsorted(start):times.searchsorted(end)]    # these are all times in between
+		times = np.sort(np.concatenate(recurrences))
+		times = times[times.searchsorted(start):times.searchsorted(end)]	# these are all times in between
 	
 	else:
 		t_ref = np.asarray(recurrences[reference_index])
 		times = t_ref[t_ref.searchsorted(start):t_ref.searchsorted(end)]
 
-        phases = np.array([unwrapped_phase(t_j, times) for t_j in recurrences])
+		phases = np.array([unwrapped_phase(t_j, times) for t_j in recurrences])
 
-        phase_differences = np.array([phases[0]-phases[i] for i in xrange(1, len(recurrences), 1)])	# Delta = phi_ref-phi_j
+		phase_differences = np.array([phases[0]-phases[i] for i in xrange(1, len(recurrences), 1)])	# Delta = phi_ref-phi_j
 	if startAtZero:
 		for i in xrange(phase_differences.shape[0]):
 			phase_differences[i] -= phase_differences[i, 0]  # differences should start diffusing at zero
 
-        return times, phase_differences
+		return times, phase_differences
 
 
 
@@ -236,6 +237,30 @@ def adjustForPlotting(x, y, ratio, threshold):	# ratio = xscale/yscale
 
 
 
+def tailHead(tx, ty):
+	# Add arrows half way along each trajectory.
+        s = np.cumsum(np.sqrt(np.diff(tx) ** 2 + np.diff(ty) ** 2))
+        n = np.searchsorted(s, s[-1] / 2.)
+	#n = tx.size/2
+	return (tx[n], ty[n]), (np.mean(tx[n:n + 2]), np.mean(ty[n:n + 2]))
+
+
+	
+default_arrow = dict(linewidth=1., color='k', arrowstyle='-|>', mutation_scale=10 * 1)
+def add_arrow(ax, tail, head, **kwargs):
+	# x, y = [arrow_tail, arrow_head]_x,  [arrow_tail, arrow_head]_y
+
+	for key in default_arrow.keys():
+
+		if not key in kwargs:
+
+			kwargs[key] = default_arrow[key]
+
+
+	p = patches.FancyArrowPatch(tail, head, transform=ax.transData, **kwargs)
+	ax.add_patch(p)
+
+
 
 def plot_phase_2D(phase_1, phase_2, **kwargs):
 	from pylab import plot, subplot
@@ -246,6 +271,12 @@ def plot_phase_2D(phase_1, phase_2, **kwargs):
 	if "axes" in kwargs:	ax = kwargs.pop('axes')
 	else: 			ax = subplot(111)
 
+	if "arrows" in kwargs:
+		arrows = kwargs.pop("arrows")	# stride for arrows
+		i_arrows = 0
+	else:
+		arrows = False
+
 	j0 = 0
 
 	for j in xrange(1, phase_1.size):
@@ -254,17 +285,23 @@ def plot_phase_2D(phase_1, phase_2, **kwargs):
 			continue
 
 		else:
-
 			try:
 				ax.plot(phase_1[j0:j], phase_2[j0:j], '-', **kwargs)
+				if arrows and i_arrows % arrows == 0:	# arrows (int):  stride for plotting arrows
+					tail, head = tailHead(phase_1[j0:j], phase_2[j0:j])
+					add_arrow(ax, tail, head)
 
-			except:
-				pass
+			except: pass
 
 			j0 = j
 
 	try:
-		ax.plot(phase_1[j0:], phase_2[j0:], '-', **kwargs)
+		ax.plot(phase_1[j0:j], phase_2[j0:j], '-', **kwargs)
+
+		if arrows and i_arrows % arrows == 0:	# arrows (int):  stride for plotting arrows
+			tail, head = tailHead(phase_1[j0:j], phase_2[j0:j])
+			add_arrow(ax, tail, head)
+
 
 	except:
 		pass
@@ -487,22 +524,10 @@ def three_cells_alt(coupling_strength, ax):
 
 if __name__ == '__main__':
 	
-	K = 0.01*np.ones((6), float)
-	K[2] = 0.02 		# (1) -> (2)
-	K[5] = 0.02		# (2) -> (3)
-	K[1] = 0.02		# (3) -> (1)
+	from pylab import *
 
-	fig = pl.figure()
-	ax = fig.add_axes([0., 0., 1., 1.])
-	three_cells_alt(K, ax=ax)
-	fig.show()
-	time.sleep(1)
+	x = arange(0., 1., 0.1)
+	y = arange(0., 1., 0.1)
 
-
-
-
-
-
-
-
-
+	plot_phase_2D(x, y, arrows=1)
+	show()
