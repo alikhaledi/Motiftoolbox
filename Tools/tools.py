@@ -239,26 +239,18 @@ def adjustForPlotting(x, y, ratio, threshold):	# ratio = xscale/yscale
 
 def tailHead(tx, ty):
 	# Add arrows half way along each trajectory.
-        s = np.cumsum(np.sqrt(np.diff(tx) ** 2 + np.diff(ty) ** 2))
+        s = np.cumsum( np.sqrt( np.diff(tx)**2+np.diff(ty)**2 ) )
         n = np.searchsorted(s, s[-1] / 2.)
 	#n = tx.size/2
 	return (tx[n], ty[n]), (np.mean(tx[n:n + 2]), np.mean(ty[n:n + 2]))
 
 
 	
-default_arrow = dict(linewidth=1., color='k', arrowstyle='-|>', mutation_scale=10 * 1)
 def add_arrow(ax, tailhead, **kwargs):
-	(tail, head) = tailhead
-	# x, y = [arrow_tail, arrow_head]_x,  [arrow_tail, arrow_head]_y
+	arrowDict = dict(linewidth=1., color='k', arrowstyle='-|>', mutation_scale=12 * 1)
+	arrowDict.update(kwargs)
 
-	for key in default_arrow.keys():
-
-		if not key in kwargs:
-
-			kwargs[key] = default_arrow[key]
-
-
-	p = patches.FancyArrowPatch(tail, head, transform=ax.transData, **kwargs)
+	p = patches.FancyArrowPatch(tailhead[0], tailhead[1], transform=ax.transData, **arrowDict)
 	ax.add_patch(p)
 
 
@@ -285,7 +277,7 @@ def plot_phase_2D(phase_1, phase_2, **kwargs):
 		else:
 			try:
 				ax.plot(phase_1[j0:j], phase_2[j0:j], '-', **kwargs)
-				if arrows: add_arrow(ax, tailHead(phase_1[j0:j], phase_2[j0:j]))
+				if arrows: add_arrow(ax, tailHead(phase_1[j0:j], phase_2[j0:j]), **kwargs)
 
 			except: pass
 
@@ -293,7 +285,7 @@ def plot_phase_2D(phase_1, phase_2, **kwargs):
 
 	try:
 		ax.plot(phase_1[j0:j], phase_2[j0:j], '-', **kwargs)
-		if arrows: add_arrow(ax, tailHead(phase_1[j0:j], phase_2[j0:j]))
+		if arrows: add_arrow(ax, tailHead(phase_1[j0:j], phase_2[j0:j]), **kwargs)
 
 	except: pass
 
@@ -520,5 +512,5 @@ if __name__ == '__main__':
 	x = arange(0., 1., 0.1)
 	y = arange(0., 1., 0.1)
 
-	plot_phase_2D(x, y, arrows=True)
+	plot_phase_2D(x, y, arrows=True, color='g')
 	show()
