@@ -247,7 +247,8 @@ def tailHead(tx, ty):
 
 	
 default_arrow = dict(linewidth=1., color='k', arrowstyle='-|>', mutation_scale=10 * 1)
-def add_arrow(ax, tail, head, **kwargs):
+def add_arrow(ax, tailhead, **kwargs):
+	(tail, head) = tailhead
 	# x, y = [arrow_tail, arrow_head]_x,  [arrow_tail, arrow_head]_y
 
 	for key in default_arrow.keys():
@@ -271,11 +272,8 @@ def plot_phase_2D(phase_1, phase_2, **kwargs):
 	if "axes" in kwargs:	ax = kwargs.pop('axes')
 	else: 			ax = subplot(111)
 
-	if "arrows" in kwargs:
-		arrows = kwargs.pop("arrows")	# stride for arrows
-		i_arrows = 0
-	else:
-		arrows = False
+	if "arrows" in kwargs:	arrows = kwargs.pop("arrows")	# arrows: True or False
+	else:			arrows = False
 
 	j0 = 0
 
@@ -287,9 +285,7 @@ def plot_phase_2D(phase_1, phase_2, **kwargs):
 		else:
 			try:
 				ax.plot(phase_1[j0:j], phase_2[j0:j], '-', **kwargs)
-				if arrows and i_arrows % arrows == 0:	# arrows (int):  stride for plotting arrows
-					tail, head = tailHead(phase_1[j0:j], phase_2[j0:j])
-					add_arrow(ax, tail, head)
+				if arrows: add_arrow(ax, tailHead(phase_1[j0:j], phase_2[j0:j]))
 
 			except: pass
 
@@ -297,14 +293,9 @@ def plot_phase_2D(phase_1, phase_2, **kwargs):
 
 	try:
 		ax.plot(phase_1[j0:j], phase_2[j0:j], '-', **kwargs)
+		if arrows: add_arrow(ax, tailHead(phase_1[j0:j], phase_2[j0:j]))
 
-		if arrows and i_arrows % arrows == 0:	# arrows (int):  stride for plotting arrows
-			tail, head = tailHead(phase_1[j0:j], phase_2[j0:j])
-			add_arrow(ax, tail, head)
-
-
-	except:
-		pass
+	except: pass
 
 
 def plot_phase_3D(phase_1, phase_2, phase_3, ax, **kwargs):
@@ -529,5 +520,5 @@ if __name__ == '__main__':
 	x = arange(0., 1., 0.1)
 	y = arange(0., 1., 0.1)
 
-	plot_phase_2D(x, y, arrows=1)
+	plot_phase_2D(x, y, arrows=True)
 	show()
