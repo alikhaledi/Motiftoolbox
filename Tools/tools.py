@@ -239,6 +239,7 @@ def adjustForPlotting(x, y, ratio, threshold):	# ratio = xscale/yscale
 
 	xnew, ynew = [x[0]], [y[0]]
 	for i in xrange(1, x.size, 1):
+
 		if np.sqrt((x[i]-xnew[-1])**2 + (ratio*(y[i]-ynew[-1]))**2) > threshold:
 			xnew.append(x[i])
 			ynew.append(y[i])
@@ -279,9 +280,9 @@ def plot_phase_2D(phase_1, phase_2, axes, **kwargs):
 	if "arrows" in kwargs:	arrows = kwargs.pop("arrows")	# arrows: True or False
 	else:			arrows = False
 
-	j0 = 0	# start plotting
 	dphi_1, dphi_2 = phase_1[1:]-phase_1[:-1], phase_2[1:]-phase_2[:-1]
 
+	j0 = 0	# start trace at this index.
 	for j in xrange(1, phase_1.size, 1):
 		
 		if abs(dphi_1[j-1]) < PI and abs(dphi_2[j-1]) < PI:
@@ -295,10 +296,10 @@ def plot_phase_2D(phase_1, phase_2, axes, **kwargs):
 
 			except: pass
 
-			j0 = j
+			j0 = j	# ... new trace starts here.
 
 	try:
-		x, y = phase_1[j0:j], phase_2[j0:j]
+		x, y = phase_1[j0:], phase_2[j0:]
 		axes.plot(x, y, '-', **kwargs)
 		if arrows: add_arrow(axes, tailHead(x, y), **kwargs)
 
@@ -306,25 +307,26 @@ def plot_phase_2D(phase_1, phase_2, axes, **kwargs):
 
 
 
-def plot_phase_3D(phase_1, phase_2, phase_3, ax, **kwargs):
+def plot_phase_3D(phase_1, phase_2, phase_3, axes, **kwargs):
 	from pylab import plot, subplot
 
-	try:	PI = kwargs.pop('PI')
-	except:	PI = np.pi
+	if "PI" in kwargs:	PI = kwargs.pop('PI')
+	else:			PI = np.pi
 
 	#assert isinstance(Axes3D)
 
-	j0 = 0
+	dphi_1, dphi_2, dphi_3 = phase_1[1:]-phase_1[:-1], phase_2[1:]-phase_2[:-1], phase_3[1:]-phase_3[:-1]
 
+	j0 = 0
 	for j in xrange(1, phase_1.size):
 		
-		if abs(phase_1[j]-phase_1[j-1]) < PI and abs(phase_2[j]-phase_2[j-1]) < PI and abs(phase_3[j]-phase_3[j-1]) < PI:
+		if abs(dphi_1[j-1]) < PI and abs(dphi_2[j-1]) < PI and abs(dphi_3[j-1]) < PI:
 			continue
 
 		else:
-
+			x, y, z = phase_1[j0:j], phase_2[j0:j], phase_3[j0:j]
 			try:
-				ax.plot(phase_1[j0:j], phase_2[j0:j], phase_3[j0:j], '-', **kwargs)
+				axes.plot(x, y, z, '-', **kwargs)
 
 			except:
 				pass
@@ -332,7 +334,8 @@ def plot_phase_3D(phase_1, phase_2, phase_3, ax, **kwargs):
 			j0 = j
 
 	try:
-		ax.plot(phase_1[j0:], phase_2[j0:], phase_3[j0:], '-', **kwargs)
+		x, y, z = phase_1[j0:], phase_2[j0:], phase_3[j0:]
+		axes.plot(x, y, z, '-', **kwargs)
 
 	except:
 		pass
