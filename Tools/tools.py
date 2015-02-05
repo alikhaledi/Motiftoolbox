@@ -261,7 +261,6 @@ def add_arrow(ax, tailhead, **kwargs):
 	arrowDict = dict(linewidth=1., color='k', arrowstyle='-|>', mutation_scale=12 * 1)
 	arrowDict.update(kwargs)
 	p = patches.FancyArrowPatch(tailhead[0], tailhead[1], transform=ax.transData, **arrowDict)
-
 	ax.add_patch(p)
 
 

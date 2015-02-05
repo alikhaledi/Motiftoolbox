@@ -59,7 +59,7 @@ class torus_2D(win.window):
 		V_j = np.transpose(V_j)
 		ti, d = tl.phase_difference(V_j, V_trigger=type(self).V_trigger)
 		last = d[-1, :]
-		tl.plot_phase_2D(d[:, 0], d[:, 1], axes=self.ax_traces, c=tl.clmap(tl.PI2*last[1], tl.PI2*last[0]), PI=0.5, arrows=True)
+		tl.plot_phase_2D(d[:, 0], d[:, 1], axes=self.ax_traces, color=tl.clmap(tl.PI2*last[1], tl.PI2*last[0]), PI=0.5, arrows=True)
 		self.fig.canvas.draw()
 
 
@@ -289,7 +289,7 @@ class torus_2D(win.window):
 				color = basins[j, i, :3]
 				plotArrow = (i % N_ARROW == 0) and (j % N_ARROW == 0)  # every n-th grid point for the top plot
 
-				try:	tl.plot_phase_2D(d[:, 0], d[:, 1], axes=self.ax_traces, c=color, PI=0.5, arrows=plotArrow)
+				try:	tl.plot_phase_2D(d[:, 0], d[:, 1], axes=self.ax_traces, color=color, PI=0.5, arrows=plotArrow)
 				except:	pass
 
 
