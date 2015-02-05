@@ -104,11 +104,13 @@ def phase_difference(V, V_trigger=-40.): # V should be in millivolt!
 
 
 class splineLS1D():
+
 	def __init__(self, s=0., isphase=False, verbose=0):
 		self.isphase = isphase
 		self.s = s
 		self.tck = None
 		self.verbose = verbose
+
 
 	def set(self, what, value):
 		print "# Setting", what, "to", value
@@ -122,9 +124,11 @@ class splineLS1D():
 			print "#", what, "cannot be set to", value
 			exit(-1)
 
+
 	def get(self, what):
 		if what == 'params':
 			return self.tck
+
 
 	def makeModel(self, f, x, w=None):
 		#print "splineLS1D: computing smoothing spline to the data ..."
@@ -164,6 +168,7 @@ class splineLS1D():
 			if self.verbose == 1:
 				show()
 
+
 	def __call__(self, x):
 
 		if self.isphase:
@@ -176,11 +181,13 @@ class splineLS1D():
 		else:
 			return np.zeros((x.size), float)
 
+
 	def df(self, x):
 		if self.isphase:
 			return spalde(np.mod(x, 2.*np.pi), self.tck)[:, 1]
 
 		return np.array(spalde(x, self.tck))[:, 1]
+
 
 	def saveCoefs(self, filename=None, file=None, close=True):
 		p = self.get('params')
@@ -199,6 +206,7 @@ class splineLS1D():
 			file.write('\n')
 			return file
 
+
 	def loadCoefs(self, filename=None, file=None, close=True):
 		self.pindex = []
 		p = []
@@ -215,6 +223,8 @@ class splineLS1D():
 		self.tck = (c, t, 3)
 		if close: file.close()
 		else: return file
+
+
 
 ############################################################
 ########################## PLOTTING ########################
@@ -240,9 +250,9 @@ def adjustForPlotting(x, y, ratio, threshold):	# ratio = xscale/yscale
 def tailHead(tx, ty):
 	# Add arrows half way along each trajectory.
         s = np.cumsum( np.sqrt( np.diff(tx)**2+np.diff(ty)**2 ) )
-        n = np.searchsorted(s, s[-1] / 2.)
+        n = np.searchsorted(s, 0.5 * s[-1] )
 	#n = tx.size/2
-	return (tx[n], ty[n]), (np.mean(tx[n:n + 2]), np.mean(ty[n:n + 2]))
+	return (tx[n], ty[n]), (np.mean(tx[n:n + 2]), np.mean(ty[n:n + 2]))	# return tail, head
 
 
 	
@@ -255,49 +265,52 @@ def add_arrow(ax, tailhead, **kwargs):
 
 
 
-def plot_phase_2D(phase_1, phase_2, **kwargs):
-	from pylab import plot, subplot
+def plot_phase_2D(phase_1, phase_2, axes, **kwargs):
+	"""
+	kwargs:
+	-	arrows: (True, False).  If True, plots an arrow in the middle of the trace.
+	-	PI: float.  Indicates periodicity/2 of the phase.  If the periodicity is 2 pi, it's PI=pi.
+	-	Other kwargs are passed to 'pylab.plot'.
+	"""
 
 	if "PI" in kwargs:	PI = kwargs.pop('PI')
 	else:			PI = np.pi
 
-	if "axes" in kwargs:	ax = kwargs.pop('axes')
-	else: 			ax = subplot(111)
-
 	if "arrows" in kwargs:	arrows = kwargs.pop("arrows")	# arrows: True or False
 	else:			arrows = False
 
-	j0 = 0
+	j0 = 0	# start plotting
+	dphi_1, dphi_2 = phase_1[1:]-phase_1[:-1], phase_2[1:]-phase_2[:-1]
 
-	for j in xrange(1, phase_1.size):
+	for j in xrange(1, phase_1.size, 1):
 		
-		if abs(phase_1[j]-phase_1[j-1]) < PI and abs(phase_2[j]-phase_2[j-1]) < PI:
+		if abs(dphi_1[j-1]) < PI and abs(dphi_2[j-1]) < PI:
 			continue
 
 		else:
 			try:
-				ax.plot(phase_1[j0:j], phase_2[j0:j], '-', **kwargs)
-				if arrows: add_arrow(ax, tailHead(phase_1[j0:j], phase_2[j0:j]), **kwargs)
+				x, y = phase_1[j0:j], phase_2[j0:j]
+				axes.plot(x, y, '-', **kwargs)
+				if arrows: add_arrow(axes, tailHead(x, y), **kwargs)
 
 			except: pass
 
 			j0 = j
 
 	try:
-		ax.plot(phase_1[j0:j], phase_2[j0:j], '-', **kwargs)
-		if arrows: add_arrow(ax, tailHead(phase_1[j0:j], phase_2[j0:j]), **kwargs)
+		x, y = phase_1[j0:j], phase_2[j0:j]
+		axes.plot(x, y, '-', **kwargs)
+		if arrows: add_arrow(axes, tailHead(x, y), **kwargs)
 
 	except: pass
+
 
 
 def plot_phase_3D(phase_1, phase_2, phase_3, ax, **kwargs):
 	from pylab import plot, subplot
 
-	try:
-		PI = kwargs.pop('PI')
-	
-	except:
-		PI = np.pi
+	try:	PI = kwargs.pop('PI')
+	except:	PI = np.pi
 
 	#assert isinstance(Axes3D)
 
@@ -512,5 +525,7 @@ if __name__ == '__main__':
 	x = arange(0., 1., 0.1)
 	y = arange(0., 1., 0.1)
 
-	plot_phase_2D(x, y, arrows=True, color='g')
+	ax = subplot(111)
+
+	plot_phase_2D(x, y, ax, arrows=True, color='g')
 	show()
