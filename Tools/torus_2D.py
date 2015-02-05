@@ -59,8 +59,7 @@ class torus_2D(win.window):
 		V_j = np.transpose(V_j)
 		ti, d = tl.phase_difference(V_j, V_trigger=type(self).V_trigger)
 		last = d[-1, :]
-		tl.plot_phase_2D(d[:, 0], d[:, 1], axes=self.ax_traces, c=tl.clmap(tl.PI2*last[1], tl.PI2*last[0]), PI=0.5)
-		#tl.plot_phase_2D(d[:, 0], d[:, 1], axes=self.ax_traces, c=tl.clmap_patterns(last[1], last[0]), PI=0.5)
+		tl.plot_phase_2D(d[:, 0], d[:, 1], axes=self.ax_traces, c=tl.clmap(tl.PI2*last[1], tl.PI2*last[0]), PI=0.5, arrows=True)
 		self.fig.canvas.draw()
 
 
@@ -280,20 +279,19 @@ class torus_2D(win.window):
 
 
                 # plot traces
+		N_ARROW = self.GRID/4	 # Plot <X> arrow symbols in each direction.
+
 		for i in xrange(self.GRID):
+
 			for j in xrange(self.GRID):
+
 				d = D[i*self.GRID+j]
 				color = basins[j, i, :3]
-				#"""
-				try:
-					tl.plot_phase_2D(d[:, 0], d[:, 1], axes=self.ax_traces, c=color, PI=0.5)
-					#last = d[-1, :]
-					#tl.plot_phase_2D(d[:, 0], d[:, 1], axes=self.ax_traces, c=tl.clmap(tl.PI2*last[1], tl.PI2*last[0]), PI=0.5)
-					#tl.plot_phase_2D(d[:, 0], d[:, 1], axes=self.ax_traces, c=tl.clmap_patterns(last[1], last[0]), PI=0.5)
-	
-				except:
-					pass
-				#"""
+				plotArrow = (i % N_ARROW == 0) and (j % N_ARROW == 0)  # every n-th grid point for the top plot
+
+				try:	tl.plot_phase_2D(d[:, 0], d[:, 1], axes=self.ax_traces, c=color, PI=0.5, arrows=plotArrow)
+				except:	pass
+
 
 		for attractor in attractors:
                     attractor.plot(self.ax_traces, 'o', mec='w', mew=1.0, ms=7.)

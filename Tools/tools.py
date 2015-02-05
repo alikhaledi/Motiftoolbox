@@ -260,8 +260,8 @@ def tailHead(tx, ty):
 def add_arrow(ax, tailhead, **kwargs):
 	arrowDict = dict(linewidth=1., color='k', arrowstyle='-|>', mutation_scale=12 * 1)
 	arrowDict.update(kwargs)
-
 	p = patches.FancyArrowPatch(tailhead[0], tailhead[1], transform=ax.transData, **arrowDict)
+
 	ax.add_patch(p)
 
 
@@ -289,21 +289,15 @@ def plot_phase_2D(phase_1, phase_2, axes, **kwargs):
 			continue
 
 		else:
-			try:
-				x, y = phase_1[j0:j], phase_2[j0:j]
-				axes.plot(x, y, '-', **kwargs)
-				if arrows: add_arrow(axes, tailHead(x, y), **kwargs)
-
-			except: pass
+			x, y = phase_1[j0:j], phase_2[j0:j]
+			axes.plot(x, y, '-', **kwargs)
+			if arrows: add_arrow(axes, tailHead(x, y), **kwargs)
 
 			j0 = j	# ... new trace starts here.
 
-	try:
-		x, y = phase_1[j0:], phase_2[j0:]
-		axes.plot(x, y, '-', **kwargs)
-		if arrows: add_arrow(axes, tailHead(x, y), **kwargs)
-
-	except: pass
+	x, y = phase_1[j0:], phase_2[j0:]
+	axes.plot(x, y, '-', **kwargs)
+	if arrows: add_arrow(axes, tailHead(x, y), **kwargs)
 
 
 
