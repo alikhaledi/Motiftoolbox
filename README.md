@@ -101,6 +101,7 @@ now enter into shell
 Make sure to but in your .bashrc
 
 > export PYTHONPATH=$PYTHONPATH:$HOME/auto/07p/python:
+
 > source $HOME/auto/07p/cmds/auto.env.sh
 
 
