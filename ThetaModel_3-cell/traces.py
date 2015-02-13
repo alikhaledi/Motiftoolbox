@@ -20,7 +20,7 @@ class traces(win.window):
 
 		self.system = phase_potrait
 		self.network = network
-		self.CYCLES = 10
+		self.CYCLES = 30
 		self.info = info
 		self.initial_condition = self.system.load_initial_condition(np.random.rand(), np.random.rand())
 
