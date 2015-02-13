@@ -27,6 +27,7 @@ class torus_2D(win.window):
 		self.info = info
 		self.GRID = 10
 		self.USE_GPU = False
+		self.PLOT_ARROWS = False
                 self.basin_image = None
 
 		ticks = 0.1*np.arange(11)
@@ -39,7 +40,7 @@ class torus_2D(win.window):
 		self.ax_basins = self.fig.add_subplot(122, xticks=ticks, yticks=ticks[1:])
 		self.ax_basins.set_xlabel(r'$\Delta\theta_{12}$', fontsize=20)
 
-		self.key_func_dict.update(dict(u=torus_2D.increase_grid, i=torus_2D.decrease_grid, E=type(self).erase_traces, g=torus_2D.switch_processor))
+		self.key_func_dict.update(dict(u=torus_2D.increase_grid, i=torus_2D.decrease_grid, E=type(self).erase_traces, g=torus_2D.switch_processor, A=torus_2D.switch_arrows))
 
 		self.fig.canvas.mpl_connect('button_press_event', self.on_click)
 
@@ -59,7 +60,7 @@ class torus_2D(win.window):
 		V_j = np.transpose(V_j)
 		ti, d = tl.phase_difference(V_j, V_trigger=type(self).V_trigger)
 		last = d[-1, :]
-		tl.plot_phase_2D(d[:, 0], d[:, 1], axes=self.ax_traces, color=tl.clmap(tl.PI2*last[1], tl.PI2*last[0]), PI=0.5, arrows=True)
+		tl.plot_phase_2D(d[:, 0], d[:, 1], axes=self.ax_traces, color=tl.clmap(tl.PI2*last[1], tl.PI2*last[0]), PI=0.5, arrows=self.PLOT_ARROWS)
 		self.fig.canvas.draw()
 
 
@@ -68,6 +69,9 @@ class torus_2D(win.window):
 
 		for j in xrange(len(self.ax_traces.lines)):
 			self.ax_traces.lines.pop(0)
+
+		for j in xrange(len(self.ax_traces.patches)):
+			self.ax_traces.patches.pop(0)
 
 		self.fig.canvas.draw()
 
@@ -94,6 +98,12 @@ class torus_2D(win.window):
 
 
 
+	def switch_arrows(self):
+		self.PLOT_ARROWS = not self.PLOT_ARROWS
+		self.focusIn()
+
+
+
 	def setGridsize(self, newGridsize):
 
 		if newGridsize > 1:
@@ -116,7 +126,8 @@ class torus_2D(win.window):
 	def focusIn(self, event=None):
 		descriptor = "GRID : "+str(self.GRID)+" ('u' > 'i')\n"
 		descriptor += "'E' : erase traces\n"
-		descriptor += "'g' : switch PU (now: %s)\n\n" % (torus_2D.PROCESSOR[self.USE_GPU])
+		descriptor += "'g' : switch PU (now: %s)\n" % (torus_2D.PROCESSOR[self.USE_GPU])
+		descriptor += "'A' : plot arrows (now: %s)\n\n" % (self.PLOT_ARROWS)
 		descriptor += "'Q' : quit program"
 		self.echo(descriptor)
 	
@@ -287,7 +298,7 @@ class torus_2D(win.window):
 
 				d = D[i*self.GRID+j]
 				color = basins[j, i, :3]
-				plotArrow = (i % N_ARROW == 0) and (j % N_ARROW == 0)  # every n-th grid point for the top plot
+				plotArrow = self.PLOT_ARROWS and (i % N_ARROW == 0) and (j % N_ARROW == 0)  # every n-th grid point for the top plot
 
 				try:	tl.plot_phase_2D(d[:, 0], d[:, 1], axes=self.ax_traces, color=color, PI=0.5, arrows=plotArrow)
 				except:	pass

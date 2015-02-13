@@ -7,7 +7,9 @@ import os
 import time
 import sys
 import matplotlib.patches as patches
-lib = ct.cdll.LoadLibrary(os.path.dirname(__file__)+'/lib/_tools.so')
+prefix = os.path.dirname(__file__)
+if prefix == '': prefix = '.'
+lib = ct.cdll.LoadLibrary(prefix+'/lib/_tools.so')
 
 DOC_PATH = '../Fig/'
 
