@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 
-import Tkinter
 import system as sys
 import network3N as netw
 import traces as tra
@@ -15,17 +14,18 @@ pos_net = '+300+0'
 pos_sys = '+0+0'
 pos_torus = '+800+0'
 
-i = nf.info(position=pos_info)
-n = netw.network(info=i, position=pos_net)
-s = sys.system(info=i, position=pos_sys, network=n)
-n.system = s
-t = tra.traces(s, n, info=i, position=pos_tra)
-s.traces = t
-tor = tor.torus(s, n, t, info=i, position=pos_torus)
+info = nf.info(position=pos_info)
+net = netw.network(g_inh=0.015, info=info, position=pos_net)
+system = sys.system(info=info, position=pos_sys, network=net)
+traces = tra.traces(system, net, info=info, position=pos_tra)
+torus = tor.torus(system, net, traces, info=info, position=pos_torus)
+
+net.system = system
+system.traces = traces
 
 if pl.get_backend() == 'TkAgg':
-	s.fig.tight_layout()
-	t.fig.tight_layout()
-	tor.fig.tight_layout()
+	system.fig.tight_layout()
+	traces.fig.tight_layout()
+	torus.fig.tight_layout()
 
 pl.show()

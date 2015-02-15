@@ -6,7 +6,10 @@ from scipy.interpolate import splrep, splev, interp1d
 import os
 import time
 import sys
-lib = ct.cdll.LoadLibrary(os.path.dirname(__file__)+'/lib/_tools.so')
+import matplotlib.patches as patches
+prefix = os.path.dirname(__file__)
+if prefix == '': prefix = '.'
+lib = ct.cdll.LoadLibrary(prefix+'/lib/_tools.so')
 
 DOC_PATH = '../Fig/'
 
@@ -41,31 +44,31 @@ def find_crossings(x, trigger):
 
 
 def unwrapped_phase(recurrences, times):
-        f = interp1d(recurrences, PI2*np.arange(recurrences.size))
-        return f(times)
+		f = interp1d(recurrences, PI2*np.arange(recurrences.size))
+		return f(times)
 
 
 def unwrapped_phase_differences(recurrences, reference_index=None, startAtZero=True):
 
-        start = np.max([t_j[0] for t_j in recurrences]) # last of the first recurrence events,
-        end = np.min([t_j[-1] for t_j in recurrences])  # first of the last recurrence events:        in between, all phases can be interpolated
+	start = np.max([t_j[0] for t_j in recurrences]) # last of the first recurrence events,
+	end = np.min([t_j[-1] for t_j in recurrences])  # first of the last recurrence events:		in between, all phases can be interpolated
 
 	if reference_index == None:
-        	times = np.sort(np.concatenate(recurrences))
-        	times = times[times.searchsorted(start):times.searchsorted(end)]    # these are all times in between
+		times = np.sort(np.concatenate(recurrences))
+		times = times[times.searchsorted(start):times.searchsorted(end)]	# these are all times in between
 	
 	else:
 		t_ref = np.asarray(recurrences[reference_index])
 		times = t_ref[t_ref.searchsorted(start):t_ref.searchsorted(end)]
 
-        phases = np.array([unwrapped_phase(t_j, times) for t_j in recurrences])
+		phases = np.array([unwrapped_phase(t_j, times) for t_j in recurrences])
 
-        phase_differences = np.array([phases[0]-phases[i] for i in xrange(1, len(recurrences), 1)])	# Delta = phi_ref-phi_j
+		phase_differences = np.array([phases[0]-phases[i] for i in xrange(1, len(recurrences), 1)])	# Delta = phi_ref-phi_j
 	if startAtZero:
 		for i in xrange(phase_differences.shape[0]):
 			phase_differences[i] -= phase_differences[i, 0]  # differences should start diffusing at zero
 
-        return times, phase_differences
+		return times, phase_differences
 
 
 
@@ -103,11 +106,13 @@ def phase_difference(V, V_trigger=-40.): # V should be in millivolt!
 
 
 class splineLS1D():
+
 	def __init__(self, s=0., isphase=False, verbose=0):
 		self.isphase = isphase
 		self.s = s
 		self.tck = None
 		self.verbose = verbose
+
 
 	def set(self, what, value):
 		print "# Setting", what, "to", value
@@ -121,9 +126,11 @@ class splineLS1D():
 			print "#", what, "cannot be set to", value
 			exit(-1)
 
+
 	def get(self, what):
 		if what == 'params':
 			return self.tck
+
 
 	def makeModel(self, f, x, w=None):
 		#print "splineLS1D: computing smoothing spline to the data ..."
@@ -163,6 +170,7 @@ class splineLS1D():
 			if self.verbose == 1:
 				show()
 
+
 	def __call__(self, x):
 
 		if self.isphase:
@@ -175,11 +183,13 @@ class splineLS1D():
 		else:
 			return np.zeros((x.size), float)
 
+
 	def df(self, x):
 		if self.isphase:
 			return spalde(np.mod(x, 2.*np.pi), self.tck)[:, 1]
 
 		return np.array(spalde(x, self.tck))[:, 1]
+
 
 	def saveCoefs(self, filename=None, file=None, close=True):
 		p = self.get('params')
@@ -198,6 +208,7 @@ class splineLS1D():
 			file.write('\n')
 			return file
 
+
 	def loadCoefs(self, filename=None, file=None, close=True):
 		self.pindex = []
 		p = []
@@ -215,6 +226,8 @@ class splineLS1D():
 		if close: file.close()
 		else: return file
 
+
+
 ############################################################
 ########################## PLOTTING ########################
 ############################################################
@@ -228,6 +241,7 @@ def adjustForPlotting(x, y, ratio, threshold):	# ratio = xscale/yscale
 
 	xnew, ynew = [x[0]], [y[0]]
 	for i in xrange(1, x.size, 1):
+
 		if np.sqrt((x[i]-xnew[-1])**2 + (ratio*(y[i]-ynew[-1]))**2) > threshold:
 			xnew.append(x[i])
 			ynew.append(y[i])
@@ -236,62 +250,78 @@ def adjustForPlotting(x, y, ratio, threshold):	# ratio = xscale/yscale
 
 
 
+def tailHead(tx, ty):
+	# Add arrows half way along each trajectory.
+        s = np.cumsum( np.sqrt( np.diff(tx)**2+np.diff(ty)**2 ) )
+        n = np.searchsorted(s, 0.5 * s[-1] )
+	#n = tx.size/2
+	return (tx[n], ty[n]), (np.mean(tx[n:n + 2]), np.mean(ty[n:n + 2]))	# return tail, head
 
-def plot_phase_2D(phase_1, phase_2, **kwargs):
+
+	
+def add_arrow(ax, tailhead, **kwargs):
+	arrowDict = dict(linewidth=1., color='k', arrowstyle='-|>', mutation_scale=12 * 1)
+	arrowDict.update(kwargs)
+	p = patches.FancyArrowPatch(tailhead[0], tailhead[1], transform=ax.transData, **arrowDict)
+	ax.add_patch(p)
+
+
+
+def plot_phase_2D(phase_1, phase_2, axes, **kwargs):
+	"""
+	kwargs:
+	-	arrows: (True, False).  If True, plots an arrow in the middle of the trace.
+	-	PI: float.  Indicates periodicity/2 of the phase.  If the periodicity is 2 pi, it's PI=pi.
+	-	Other kwargs are passed to 'pylab.plot'.
+	"""
+
+	if "PI" in kwargs:	PI = kwargs.pop('PI')
+	else:			PI = np.pi
+
+	if "arrows" in kwargs:	arrows = kwargs.pop("arrows")	# arrows: True or False
+	else:			arrows = False
+
+	dphi_1, dphi_2 = phase_1[1:]-phase_1[:-1], phase_2[1:]-phase_2[:-1]
+
+	j0 = 0	# start trace at this index.
+	for j in xrange(1, phase_1.size, 1):
+		
+		if abs(dphi_1[j-1]) < PI and abs(dphi_2[j-1]) < PI:
+			continue
+
+		else:
+			x, y = phase_1[j0:j], phase_2[j0:j]
+			axes.plot(x, y, '-', **kwargs)
+			if arrows: add_arrow(axes, tailHead(x, y), **kwargs)
+
+			j0 = j	# ... new trace starts here.
+
+	x, y = phase_1[j0:], phase_2[j0:]
+	axes.plot(x, y, '-', **kwargs)
+	if arrows: add_arrow(axes, tailHead(x, y), **kwargs)
+
+
+
+def plot_phase_3D(phase_1, phase_2, phase_3, axes, **kwargs):
 	from pylab import plot, subplot
 
 	if "PI" in kwargs:	PI = kwargs.pop('PI')
 	else:			PI = np.pi
 
-	if "axes" in kwargs:	ax = kwargs.pop('axes')
-	else: 			ax = subplot(111)
-
-	j0 = 0
-
-	for j in xrange(1, phase_1.size):
-		
-		if abs(phase_1[j]-phase_1[j-1]) < PI and abs(phase_2[j]-phase_2[j-1]) < PI:
-			continue
-
-		else:
-
-			try:
-				ax.plot(phase_1[j0:j], phase_2[j0:j], '-', **kwargs)
-
-			except:
-				pass
-
-			j0 = j
-
-	try:
-		ax.plot(phase_1[j0:], phase_2[j0:], '-', **kwargs)
-
-	except:
-		pass
-
-
-def plot_phase_3D(phase_1, phase_2, phase_3, ax, **kwargs):
-	from pylab import plot, subplot
-
-	try:
-		PI = kwargs.pop('PI')
-	
-	except:
-		PI = np.pi
-
 	#assert isinstance(Axes3D)
 
-	j0 = 0
+	dphi_1, dphi_2, dphi_3 = phase_1[1:]-phase_1[:-1], phase_2[1:]-phase_2[:-1], phase_3[1:]-phase_3[:-1]
 
+	j0 = 0
 	for j in xrange(1, phase_1.size):
 		
-		if abs(phase_1[j]-phase_1[j-1]) < PI and abs(phase_2[j]-phase_2[j-1]) < PI and abs(phase_3[j]-phase_3[j-1]) < PI:
+		if abs(dphi_1[j-1]) < PI and abs(dphi_2[j-1]) < PI and abs(dphi_3[j-1]) < PI:
 			continue
 
 		else:
-
+			x, y, z = phase_1[j0:j], phase_2[j0:j], phase_3[j0:j]
 			try:
-				ax.plot(phase_1[j0:j], phase_2[j0:j], phase_3[j0:j], '-', **kwargs)
+				axes.plot(x, y, z, '-', **kwargs)
 
 			except:
 				pass
@@ -299,7 +329,8 @@ def plot_phase_3D(phase_1, phase_2, phase_3, ax, **kwargs):
 			j0 = j
 
 	try:
-		ax.plot(phase_1[j0:], phase_2[j0:], phase_3[j0:], '-', **kwargs)
+		x, y, z = phase_1[j0:], phase_2[j0:], phase_3[j0:]
+		axes.plot(x, y, z, '-', **kwargs)
 
 	except:
 		pass
@@ -487,22 +518,12 @@ def three_cells_alt(coupling_strength, ax):
 
 if __name__ == '__main__':
 	
-	K = 0.01*np.ones((6), float)
-	K[2] = 0.02 		# (1) -> (2)
-	K[5] = 0.02		# (2) -> (3)
-	K[1] = 0.02		# (3) -> (1)
+	from pylab import *
 
-	fig = pl.figure()
-	ax = fig.add_axes([0., 0., 1., 1.])
-	three_cells_alt(K, ax=ax)
-	fig.show()
-	time.sleep(1)
+	x = arange(0., 1., 0.1)
+	y = arange(0., 1., 0.1)
 
+	ax = subplot(111)
 
-
-
-
-
-
-
-
+	plot_phase_2D(x, y, ax, arrows=True, color='g')
+	show()
