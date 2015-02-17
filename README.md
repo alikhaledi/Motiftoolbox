@@ -109,7 +109,7 @@ Enter into your $HOME/.bashrc
 CONTRIBUTORS
 -------------------------------------------
 
-Justus Schwabedal
+Justus Schwabedal 2014, 2015
 
 Drake Knapper
 
