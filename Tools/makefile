@@ -14,7 +14,7 @@ LDFLAGS=-lm
 ###
 
 
-noise: cuda fitzhugh_noise
+noise: allall fitzhugh_noise
 	rm *.o
 
 test: allall fitzhugh_cuda
