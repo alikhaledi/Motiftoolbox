@@ -6,8 +6,26 @@ import phaseResettingCurve as prc
 import distribute
 
 import scipy.interpolate
-import scipy.optimize as opt
 import scipy.linalg
+import scipy.optimize as opt
+
+try:
+	opt.root
+
+except:
+	class sol(object):
+
+		def __init__(self, x, success):
+			self.x = x
+			self.success = success
+
+
+	def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None, options=None):
+		x = opt.broyden2(fun, x0, f_tol=tol, callback=callback)
+		return sol(x, True)
+
+	opt.root = root
+
 
 import ctypes as ct
 import os
@@ -56,14 +74,15 @@ class fixedPoint_torus(object):
 		self.fp = np.mod(np.asarray(x), tl.PI2)
 		self.eigenValues = np.asarray(eigenvalues)
 		self.color = tl.clmap(self.fp[1], self.fp[0])
+		realpart = np.real(self.eigenValues)
 
-		if all(self.eigenValues < 0.):
+		if all(realpart < 0.):
 			self.stability_idx = 0 # sink
 
-		elif all(self.eigenValues > 0.):
+		elif all(realpart > 0.):
 			self.stability_idx = 1 # source
 
-		elif np.prod(self.eigenValues) < 0.:
+		elif np.prod(realpart) < 0.:
 			self.stability_idx = 2 # saddle
 
 
@@ -123,18 +142,19 @@ class interp_torus_vec(object):
 		def findRoot(n):
 
 			i, j = n/GRID, np.mod(n, GRID)
+			fp = [[0., 0.], [0., 0.]]
 
 			try:
-				fp = [[0., 0.], [0., 0.]]
 				sol = opt.root(self.__call__, x0=[phase[i], phase[j]], tol=10.**-11, method='broyden2')
 
 				if sol.success:
 					jac = np.array([scipy.optimize.approx_fprime(sol.x, lambda x: self.f[i](x[0], x[1]), epsilon=0.25*dphi)
 								for i in xrange(self.dimensions)])
+
 					eigenvalues =  scipy.linalg.eigvals(jac)
 
 					if not any([eigen == 0. for eigen in eigenvalues]):
-						fp = [sol.x, np.real(eigenvalues)]
+						fp = [sol.x, eigenvalues]
 
 
 			except:
