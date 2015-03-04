@@ -64,11 +64,12 @@ def unwrapped_phase_differences(recurrences, reference_index=None, startAtZero=T
 		phases = np.array([unwrapped_phase(t_j, times) for t_j in recurrences])
 
 		phase_differences = np.array([phases[0]-phases[i] for i in xrange(1, len(recurrences), 1)])	# Delta = phi_ref-phi_j
+
 	if startAtZero:
 		for i in xrange(phase_differences.shape[0]):
 			phase_differences[i] -= phase_differences[i, 0]  # differences should start diffusing at zero
 
-		return times, phase_differences
+	return times, phase_differences
 
 
 
