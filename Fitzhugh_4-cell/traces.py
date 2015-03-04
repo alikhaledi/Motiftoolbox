@@ -34,7 +34,7 @@ class traces:
 		self.ax.set_xlim(0., 100.)
 		self.ax.set_ylim(-8.5, 1.5)
 
-		self.fig.tight_layout()
+		#self.fig.tight_layout()
 
 		self.key_func_dict = dict(u=traces.increase_cycles, i=traces.decrease_cycles)
 		self.fig.canvas.mpl_connect('key_press_event', self.on_key)

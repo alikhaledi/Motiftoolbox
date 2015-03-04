@@ -53,7 +53,7 @@ class system(win.window):
 		self.refresh_nullclines()
 		self.refresh_orbit()
 
-		self.fig.tight_layout()
+		#self.fig.tight_layout()
 
 		self.key_func_dict.update(dict(C=system.set_params))
 
