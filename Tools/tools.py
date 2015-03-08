@@ -7,6 +7,7 @@ import os
 import time
 import sys
 import matplotlib.patches as patches
+
 prefix = os.path.dirname(__file__)
 if prefix == '': prefix = '.'
 lib = ct.cdll.LoadLibrary(prefix+'/lib/_tools.so')
@@ -346,9 +347,6 @@ sh2 = -pi/4.-0.5
 
 
 def clmap_bin(th1, th2):
-	r = sin((th1+sh1)/2.)**6*sin((th2+sh2)/2.)**6+cos(th2/2.)**6 + 0.1*(sin(th1/2.)**6*sin(th2/2.)**6)
-	g = cos(th1/2.)**6+0.3*(sin(th1/2.)**6*sin(th2/2.)**6) + 0.1*(sin(th1/2.)**6*sin(th2/2.)**6)
-	#b = sin((th1+sh1)/2.)**6*sin((th2+sh2)/2.)**6 + sin(th1/2.)**6*sin(th2/2.)**6
 	r = cos(.5*(th1))*cos(0.5*(th2-pi))
 	g = cos(.5*(th1-pi))*cos(0.5*(th2))
 	b = cos(.5*(th1-pi))*cos(0.5*(th2-pi))
