@@ -414,15 +414,14 @@ def torus_distance(t_1, t_2): # phases range (0, 1)
 	return np.sqrt((min(delta[0], 1.-delta[0])**2+min(delta[1], 1.-delta[1])**2).sum())
 
 
-torus_patterns = [np.array([0.5, 0.5]), np.array([0.5, 0.]), np.array([0., 0.5]), np.array([1./3., 2./3.]), np.array([2./3., 1./3.])]
+torus_patterns = PI2*np.array([[0.5, 0.5], [0.5, 0.], [0., 0.5], [2./3., 1./3.], [1./3., 2./3.]])
 torus_colors = [(0., 0., 1.), (1., 0., 0.), (0., 0.5, 0.), (0., 0., 0.), (0.5, 0.5, 0.5)]   # blue, green, red, black, grey
 def clmap_patterns(phase_1, phase_2): # phases in range (0, 1)
 	phase = np.array([phase_1, phase_2])
 	# select which pattern
 	return torus_colors[
-			np.argmin(
-				[torus_distance(phase, torus_patterns[i])
-					for i in xrange(len(torus_patterns))])]
+			np.argmin( [torus_distance(phase, pattern)
+					for pattern in torus_patterns] )]
 
 
 
