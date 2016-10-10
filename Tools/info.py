@@ -2,8 +2,8 @@
 
 import sys
 sys.path.insert(0, '../Tools')
-import tools as tl
 import window as win
+import tools as tl
 
 import numpy as np
 import pylab as pl

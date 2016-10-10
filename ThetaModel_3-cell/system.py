@@ -3,9 +3,9 @@
 import time
 import sys
 sys.path.insert(0, '../Tools')
+import window as win
 import thetax2 as th2
 import tools as tl
-import window as win
 
 import numpy as np
 
