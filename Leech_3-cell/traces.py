@@ -44,8 +44,8 @@ class traces(win.window):
 		self.ax.set_xlim(0., 100.)
 		self.ax.set_ylim(-0.06-0.12, 0.04)
 
-		self.key_func_dict = dict(u=traces.increase_cycles, i=traces.decrease_cycles)
-		self.fig.canvas.mpl_connect('button_press_event', self.on_click)
+		self.key_func_dict.update(u=traces.increase_cycles, i=traces.decrease_cycles)
+		#self.fig.canvas.mpl_connect('button_press_event', self.on_click)
 		self.fig.canvas.mpl_connect('axes_enter_event', self.focus_in)
 
 
@@ -66,7 +66,7 @@ class traces(win.window):
 	def focus_in(self, event=None):
 		descriptor = "CYCLES : "+str(self.CYCLES)+" ('u' > 'i')"
 
-		if self.info == None: print descriptor
+		if self.info is None: print descriptor
 		else: self.info.set(descriptor)
 		
 
@@ -133,12 +133,9 @@ class traces(win.window):
 
 
 
-
-
-
 	def computeTraces(self, initial_condition=None, plotit=True):
 
-		if initial_condition == None:
+		if initial_condition is None:
 			initial_condition = self.initial_condition
 
 		V_i = model.integrate_three_rk4(
