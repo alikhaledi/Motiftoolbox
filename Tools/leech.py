@@ -144,24 +144,23 @@ STRIDE_ORBIT = 1
 THRESHOLD = -0.04
 
 def single_orbit(DT_ORBIT=DT_ORBIT, N_ORBIT=N_ORBIT, STRIDE_ORBIT=STRIDE_ORBIT, V_threshold=THRESHOLD, verbose=0):
-	X = integrate_one_rk4(-0.04346306, 0.99599451, 0.02006609, dt=DT_ORBIT/float(STRIDE_ORBIT), N_integrate=N_ORBIT, stride=STRIDE_ORBIT)
-	V, h, m = X[0], X[1], X[2]
-	Vm, Hm, Mm = tl.splineLS1D(), tl.splineLS1D(), tl.splineLS1D()
+    X = integrate_one_rk4(-0.04346306, 0.99599451, 0.02006609, dt=DT_ORBIT/float(STRIDE_ORBIT), N_integrate=N_ORBIT, stride=STRIDE_ORBIT)
+    V, h, m = X[0], X[1], X[2]
+    Vm, Hm, Mm = tl.splineLS1D(), tl.splineLS1D(), tl.splineLS1D()
+    
+    try:
+        ni = tl.crossings(V, V_threshold) # convert to millivolts
+        ni = ni.astype(np.int64)
+        V, h, m = V[ni[-2]:ni[-1]], h[ni[-2]:ni[-1]], m[ni[-2]:ni[-1]]
+        t = PI2*np.arange(V.size)/float(V.size-1)
+        Vm.makeModel(V, t); Hm.makeModel(h, t); Mm.makeModel(m, t)
+    
+    except:
+        print '# single_orbit:  No closed orbit found!'
+        raise ValueError
 
-	try:
-		ni = tl.crossings(V, V_threshold) # convert to millivolts
-		V, h, m = V[ni[-2]:ni[-1]], h[ni[-2]:ni[-1]], m[ni[-2]:ni[-1]]
-		t = PI2*np.arange(V.size)/float(V.size-1)
-		Vm.makeModel(V, t); Hm.makeModel(h, t); Mm.makeModel(m, t)
-
-	except:
-		print '# single_orbit:  No closed orbit found!'
-		raise ValueError
-
-	
-	T = DT_ORBIT*V.size
-
-	return Vm, Hm, Mm, T
+    T = DT_ORBIT*V.size
+    return Vm, Hm, Mm, T
 
 
 #===
@@ -267,10 +266,11 @@ def nullcline_m(V): # nullcline_m, voltages in mV
 
 
 def nullcline_V(V, g_syn=0.): # m_K2(V), nullcline V'=0, V in volts
-	I_Na = params['g_Na']*m_Na(V)**3*h_Na(V)*(V-params['E_Na'])
-	I_L = params['g_L']*(V-params['E_L'])
-	I_syn = g_syn*(V-params['E_syn'])
-	return np.sqrt((I_Na+I_L+params['I_ext']+I_syn)/(params['g_K2']*(params['E_K2']-V)))
+    I_Na = params['g_Na']*m_Na(V)**3*h_Na(V)*(V-params['E_Na'])
+    I_L = params['g_L']*(V-params['E_L'])
+    I_syn = g_syn*(V-params['E_syn'])
+    value = (I_Na+I_L+params['I_ext']+I_syn)/(params['g_K2']*(params['E_K2']-V))
+    return np.sqrt( value * (value>0.) )
 
 #===
 
